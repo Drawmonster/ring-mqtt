@@ -13,6 +13,7 @@ on:
     branches: [local-fixes]
 
 permissions:
+  actions: write
   contents: read
   packages: write
 
@@ -85,6 +86,14 @@ jobs:
           labels: |
             org.opencontainers.image.source=https://github.com/Drawmonster/ring-mqtt
             org.opencontainers.image.revision=${{ steps.apply.outputs.upstream }}
+
+      # GitHub disables a public repo's scheduled workflows after 60 days with no
+      # commits, and this branch only changes when a fix breaks. Re-enabling the
+      # workflow on every successful run resets that clock.
+      - name: Keep the schedule alive
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh api -X PUT "repos/${{ github.repository }}/actions/workflows/local-fixes.yml/enable"
 
       - name: Tell Discord the build failed
         if: failure()
